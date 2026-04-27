@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menükarten-Editor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ci:#2a9d7c}
+body{font-family:'Lato',sans-serif;font-size:13px;background:#f5f5f3;color:#2c2c2a}
+.wrap{display:grid;grid-template-columns:360px 1fr;gap:0;min-height:100vh}
+.editor{padding:1.4rem;border-right:1px solid #e0e0d8;overflow-y:auto;background:white;position:sticky;top:0;height:100vh}
+.preview-wrap{padding:1.4rem;background:#f5f5f3;overflow-y:auto}
+h3{font-size:13px;font-weight:700;color:#2c2c2a;margin:1rem 0 0.5rem;text-transform:uppercase;letter-spacing:0.05em}
+h3:first-child{margin-top:0}
+label{font-size:11px;color:#888;display:block;margin-bottom:3px;margin-top:6px}
+input[type=text],textarea{width:100%;font-size:12px;padding:6px 9px;border:1px solid #e0e0d8;border-radius:6px;background:#fafaf8;color:#2c2c2a;font-family:'Lato',sans-serif}
+input[type=text]:focus,textarea:focus{outline:none;border-color:#aaa;background:white}
+textarea{resize:vertical;min-height:40px;line-height:1.4}
+input[type=color]{width:36px;height:28px;border:1px solid #e0e0d8;border-radius:4px;padding:2px;cursor:pointer;background:#fafaf8}
+
+/* Restaurant switcher */
+.rest-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:0}
+.rest-btn{padding:8px 4px;border:2px solid #e0e0d8;border-radius:8px;cursor:pointer;font-size:11px;font-family:'Lato',sans-serif;font-weight:700;background:#fafaf8;color:#888;text-align:center;transition:all 0.15s;letter-spacing:0.04em}
+.rest-btn:hover{background:#f0f0ec}
+.rest-btn.active{background:white;color:#2c2c2a}
+
+/* Logo upload */
+.logo-upload{border:1px dashed #ccc;border-radius:6px;padding:8px;text-align:center;cursor:pointer;font-size:11px;color:#aaa;position:relative;overflow:hidden;min-height:44px;display:flex;align-items:center;justify-content:center;background:#fafaf8;transition:background 0.15s}
+.logo-upload:hover{background:#f0f0ec}
+.logo-upload input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.logo-preview{max-height:36px;max-width:100%;object-fit:contain;display:block;margin:0 auto;background:transparent}
+.logo-clear{position:absolute;top:3px;right:5px;background:none;border:none;cursor:pointer;color:#ccc;font-size:14px;z-index:10;line-height:1}
+.logo-clear:hover{color:#888}
+
+.section-block{background:white;border:1px solid #e8e8e0;border-radius:6px;padding:8px;margin-bottom:6px}
+.sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.sec-label{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.05em}
+.rm{background:none;border:none;cursor:pointer;color:#ccc;font-size:16px;line-height:1;padding:0 2px}
+.rm:hover{color:#888}
+.add-btn{width:100%;padding:7px;border:1px dashed #ccc;border-radius:6px;background:none;cursor:pointer;font-size:12px;color:#aaa;font-family:'Lato',sans-serif;margin:4px 0 8px;transition:all 0.15s}
+.add-btn:hover{background:#f5f5f3;color:#666}
+.add-btn-small{padding:5px;font-size:11px;margin:3px 0 6px}
+
+/* Column + Block structure */
+.col-block{background:#fafaf8;border:1px solid #e8e8e0;border-radius:8px;padding:10px;margin-bottom:10px}
+.col-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.col-label{font-size:12px;font-weight:700;color:#2c2c2a;text-transform:uppercase;letter-spacing:0.05em}
+
+.block-wrap{background:#f0f0ec;border:1px solid #e0e0d8;border-radius:6px;padding:8px;margin-bottom:8px}
+.block-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.block-label{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.05em}
+
+.btn-row-single{margin-top:8px}
+.pdf-btn{padding:12px;background:var(--ci);border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:'Lato',sans-serif;color:white;font-weight:700;letter-spacing:0.05em;transition:opacity 0.15s;width:100%}
+.pdf-btn:hover{opacity:0.85}
+.pdf-btn:disabled{opacity:0.5;cursor:not-allowed}
+.divider{height:1px;background:#e8e8e0;margin:0.9rem 0}
+.ci-row{display:flex;align-items:center;gap:8px;margin-top:4px}
+.ci-row span{font-size:11px;color:#888}
+.ci-swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+.ci-swatch{height:36px;border:2px solid #e0e0d8;border-radius:6px;cursor:pointer;transition:all 0.15s;padding:0;position:relative}
+.ci-swatch:hover{transform:scale(1.05)}
+.ci-swatch.active{border-color:#2c2c2a;box-shadow:0 0 0 2px white inset}
+.item-sub{display:grid;gap:4px;margin-top:4px}
+.app-title{font-size:16px;font-weight:900;letter-spacing:0.08em;color:#2c2c2a;margin-bottom:1.2rem}
+.preview-label{font-size:11px;color:#aaa;margin-bottom:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
+
+/* Preview paper — A4, symmetrische Außenränder */
+.preview-paper{background:white;color:#2c2c2a;padding:2.5cm 2cm;font-family:'Lato',sans-serif;width:210mm;min-height:297mm;margin:0 auto;box-shadow:0 2px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column}
+.p-inner{flex:1;display:flex;flex-direction:column}
+
+/* Spalten: gap = 2 × Außenrand (2cm) = 4cm, damit Falz in der Mitte symmetrisch wird.
+   align-items:stretch → beide Spalten gleich hoch. */
+.p-columns{display:grid;grid-template-columns:1fr 1fr;gap:4cm;flex:1;align-items:stretch}
+.p-column{display:flex;flex-direction:column;align-items:center}
+
+/* Logo oben — feste Position */
+.p-col-logo{display:flex;align-items:center;justify-content:center;margin-bottom:2.5cm;height:104px;width:100%;flex-shrink:0}
+.p-col-logo img{max-height:104px;max-width:85%;object-fit:contain;background:transparent}
+
+/* Inhalts-Wrapper unter dem Logo: nimmt restliche Höhe + zentriert vertikal */
+.p-col-content{flex:1;display:flex;flex-direction:column;justify-content:center;width:100%}
+
+/* Spalten-Überschrift — Libre Caslon Text, keine Linie darunter */
+.p-col-title{font-family:'Libre Caslon Text',serif;font-size:14px;font-weight:400;letter-spacing:0.16em;text-align:center;margin-bottom:1.4rem;line-height:1.4;width:100%;text-transform:uppercase}
+
+/* Weitere Überschrift innerhalb einer Spalte (nicht die erste) */
+.p-col-title-additional{margin-top:1.8rem}
+
+/* Einheitlicher vertikaler Rhythmus */
+.p-section{margin-bottom:1.4rem;text-align:center;width:100%}
+.p-section:last-child{margin-bottom:0}
+.p-sec-name{font-family:'Lato',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.14em;margin-bottom:0.5rem;line-height:1.4;text-transform:uppercase;color:#2c2c2a}
+.p-sec-items{font-size:12px;line-height:1.5;color:#2c2c2a;font-weight:400}
+
+.p-footer{text-align:center;margin-top:1.5rem;padding-top:0.8rem;font-size:10px;color:#bbb;letter-spacing:0.1em;font-weight:300;border-top:1px solid #eee}
+
+.logo-placeholder{height:104px;border:1px dashed #e0e0d8;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#ccc;font-family:'Lato',sans-serif;width:100%;margin-bottom:2.5cm;padding:0 10px;text-align:center;flex-shrink:0}
+.spacer-line{height:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- EDITOR -->
+<div class="editor">
+  <div class="app-title">Menükarten-Editor</div>
+
+  <!-- Restaurant-Auswahl -->
+  <h3>Restaurant</h3>
+  <div class="rest-btns">
+    <button class="rest-btn active" id="btn-aipero" onclick="setRestaurant('aipero')">Ai Pero</button>
+    <button class="rest-btn" id="btn-hammes" onclick="setRestaurant('hammes')">Hammesmühle</button>
+    <button class="rest-btn" id="btn-purs" onclick="setRestaurant('purs')">PURS</button>
+    <button class="rest-btn" id="btn-yoso" onclick="setRestaurant('yoso')">YOSO</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- CI -->
+  <h3>CI-Farbe</h3>
+  <div class="ci-swatches">
+    <button class="ci-swatch" data-ci="#1e9678" style="background:#1e9678" onclick="setCi('#1e9678')" title="Ai Pero"></button>
+    <button class="ci-swatch" data-ci="#1E5175" style="background:#1E5175" onclick="setCi('#1E5175')" title="Hammesmühle"></button>
+    <button class="ci-swatch" data-ci="#626469" style="background:#626469" onclick="setCi('#626469')" title="PURS"></button>
+    <button class="ci-swatch" data-ci="#96694c" style="background:#96694c" onclick="setCi('#96694c')" title="YOSO"></button>
+  </div>
+  <input type="hidden" id="ciColor" value="#1e9678">
+
+  <div class="divider"></div>
+
+  <!-- Logos -->
+  <h3>Logos</h3>
+  <label>Veranstalter-Logo (linke Spalte, optional)</label>
+  <div class="logo-upload" id="logoEventWrap">
+    <input type="file" accept="image/*" onchange="loadEventLogo(this)">
+    <span id="logoEventTxt">Bild hochladen</span>
+    <img id="logoEventImg" style="display:none" class="logo-preview">
+    <button class="logo-clear" id="logoEventClear" style="display:none" onclick="clearEventLogo(event)">×</button>
+  </div>
+
+  <label style="margin-top:10px">Restaurant-Logo (rechte Spalte)</label>
+  <div class="logo-upload" id="logoRestWrap">
+    <input type="file" accept="image/*" onchange="loadRestaurantLogo(this)">
+    <span id="logoRestTxt">Logo hochladen (PNG mit Transparenz)</span>
+    <img id="logoRestImg" style="display:none" class="logo-preview">
+    <button class="logo-clear" id="logoRestClear" style="display:none" onclick="clearRestaurantLogo(event)">×</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Spalten (fest 2) -->
+  <div id="columnsEditor"></div>
+
+  <div class="divider"></div>
+  <label>Fußzeile (optional)</label>
+  <input type="text" id="footer" value="" oninput="render()">
+
+  <div class="btn-row-single">
+    <button class="pdf-btn" id="pdfBtn" onclick="doPDF()">⬇ PDF herunterladen</button>
+  </div>
+  <div id="pdfStatus" style="font-size:11px;color:#aaa;text-align:center;margin-top:6px;min-height:16px"></div>
+</div>
+
+<!-- PREVIEW -->
+<div class="preview-wrap">
+  <div class="preview-label">Vorschau (DIN A4)</div>
+  <div id="preview"></div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+/* ── Restaurant Presets ── */
+const RESTAURANTS = {
+  aipero: {name: 'Ai Pero',     ci: '#1e9678'},
+  hammes: {name: 'Hammesmühle', ci: '#1E5175'},
+  purs:   {name: 'PURS',        ci: '#626469'},
+  yoso:   {name: 'YOSO',        ci: '#96694c'}
+};
+
+let restaurantLogo = null;   // rechte Spalte
+let eventLogo = null;         // linke Spalte
+
+/* Datenstruktur:
+   columns = [
+     { blocks: [ {title: 'GETRÄNKE', sections: [{name, items}, ...]},
+                 {title: 'WEINKARTE', sections: [...]} ] },   // linke Spalte
+     { blocks: [ {title: 'MENÜ', sections: [...]} ] }          // rechte Spalte
+   ]
+*/
+let columns = [
+  {blocks: [{title: 'GETRÄNKE', sections: []}]},
+  {blocks: [{title: 'MENÜ',     sections: []}]}
+];
+
+let currentRestaurant = 'aipero';
+
+function setRestaurant(key) {
+  currentRestaurant = key;
+  const r = RESTAURANTS[key];
+  document.getElementById('ciColor').value = r.ci;
+  setCi(r.ci);
+  document.querySelectorAll('.rest-btn').forEach(b => {
+    b.classList.remove('active');
+    b.style.borderColor = '#e0e0d8';
+    b.style.color = '#888';
+  });
+  const activeBtn = document.getElementById('btn-' + key);
+  activeBtn.classList.add('active');
+  activeBtn.style.borderColor = r.ci;
+  activeBtn.style.color = r.ci;
+  render();
+}
+
+function setCi(v) {
+  document.documentElement.style.setProperty('--ci', v);
+  document.getElementById('ciColor').value = v;
+  // Aktives Swatch markieren
+  document.querySelectorAll('.ci-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.ci.toLowerCase() === v.toLowerCase());
+  });
+  render();
+}
+
+/* ── Logo handling ── */
+function loadRestaurantLogo(inp) {
+  const f = inp.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    restaurantLogo = e.target.result;
+    document.getElementById('logoRestTxt').style.display = 'none';
+    document.getElementById('logoRestImg').src = e.target.result;
+    document.getElementById('logoRestImg').style.display = 'block';
+    document.getElementById('logoRestClear').style.display = 'block';
+    render();
+  };
+  r.readAsDataURL(f);
+}
+function clearRestaurantLogo(e) {
+  e.preventDefault(); e.stopPropagation();
+  restaurantLogo = null;
+  document.getElementById('logoRestTxt').style.display = '';
+  document.getElementById('logoRestImg').style.display = 'none';
+  document.getElementById('logoRestClear').style.display = 'none';
+  render();
+}
+
+function loadEventLogo(inp) {
+  const f = inp.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    eventLogo = e.target.result;
+    document.getElementById('logoEventTxt').style.display = 'none';
+    document.getElementById('logoEventImg').src = e.target.result;
+    document.getElementById('logoEventImg').style.display = 'block';
+    document.getElementById('logoEventClear').style.display = 'block';
+    render();
+  };
+  r.readAsDataURL(f);
+}
+function clearEventLogo(e) {
+  e.preventDefault(); e.stopPropagation();
+  eventLogo = null;
+  document.getElementById('logoEventTxt').style.display = '';
+  document.getElementById('logoEventImg').style.display = 'none';
+  document.getElementById('logoEventClear').style.display = 'none';
+  render();
+}
+
+/* ── Blocks (Überschriften innerhalb einer Spalte) ── */
+function addBlock(colIdx) {
+  columns[colIdx].blocks.push({title: 'WEITERE ÜBERSCHRIFT', sections: []});
+  buildEditor();
+  render();
+}
+function removeBlock(colIdx, blockIdx) {
+  if (columns[colIdx].blocks.length <= 1) {
+    alert('Mindestens eine Überschrift muss pro Spalte vorhanden sein');
+    return;
+  }
+  columns[colIdx].blocks.splice(blockIdx, 1);
+  buildEditor();
+  render();
+}
+function updateBlockTitle(colIdx, blockIdx, v) {
+  columns[colIdx].blocks[blockIdx].title = v;
+  render();
+}
+
+/* ── Sections ── */
+function addSection(colIdx, blockIdx) {
+  columns[colIdx].blocks[blockIdx].sections.push({name: '', items: ''});
+  buildEditor();
+  render();
+}
+function removeSection(colIdx, blockIdx, secIdx) {
+  columns[colIdx].blocks[blockIdx].sections.splice(secIdx, 1);
+  buildEditor();
+  render();
+}
+function updateSectionName(colIdx, blockIdx, secIdx, v) {
+  columns[colIdx].blocks[blockIdx].sections[secIdx].name = v;
+  render();
+}
+function updateSectionItems(colIdx, blockIdx, secIdx, v) {
+  columns[colIdx].blocks[blockIdx].sections[secIdx].items = v;
+  render();
+}
+
+function buildEditor() {
+  const container = document.getElementById('columnsEditor');
+  const labels = ['Linke Spalte', 'Rechte Spalte'];
+  container.innerHTML = columns.map((col, colIdx) => `
+    <h3 style="${colIdx > 0 ? 'margin-top:1.2rem' : ''}">${labels[colIdx]}</h3>
+
+    ${col.blocks.map((block, blockIdx) => `
+      <div class="block-wrap">
+        <div class="block-head">
+          <span class="block-label">${blockIdx === 0 ? 'Hauptüberschrift' : 'Weitere Überschrift'}</span>
+          ${col.blocks.length > 1 ? `<button class="rm" onclick="removeBlock(${colIdx}, ${blockIdx})" title="Überschrift entfernen">×</button>` : ''}
+        </div>
+        <label>Kategorie (z.B. Getränke, Menü)</label>
+        <input type="text" value="${esc(block.title)}" oninput="updateBlockTitle(${colIdx}, ${blockIdx}, this.value)">
+
+        <div style="margin-top:6px">
+          ${block.sections.map((s, secIdx) => `
+            <div class="section-block">
+              <div class="sec-head">
+                <span class="sec-label">Abschnitt ${secIdx + 1}</span>
+                <button class="rm" onclick="removeSection(${colIdx}, ${blockIdx}, ${secIdx})">×</button>
+              </div>
+              <div class="item-sub">
+                <div><label>Gericht</label>
+                <input type="text" value="${esc(s.name)}" oninput="updateSectionName(${colIdx}, ${blockIdx}, ${secIdx}, this.value)"></div>
+                <div><label>Komponenten (Option + 7 für |)</label>
+                <textarea oninput="updateSectionItems(${colIdx}, ${blockIdx}, ${secIdx}, this.value)">${esc(s.items)}</textarea></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <button class="add-btn add-btn-small" onclick="addSection(${colIdx}, ${blockIdx})">+ Abschnitt hinzufügen</button>
+      </div>
+    `).join('')}
+
+    <button class="add-btn" onclick="addBlock(${colIdx})">+ Weitere Überschrift</button>
+  `).join('');
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function escH(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function renderItems(txt) {
+  if (!txt || !txt.trim()) return '';
+  return txt.split('\n').map(l =>
+    l.trim()
+      ? `<div style="font-size:inherit;line-height:1.5;font-family:'Lato',sans-serif">${escH(l)}</div>`
+      : `<div class="spacer-line"></div>`
+  ).join('');
+}
+
+function render() {
+  const ci = document.getElementById('ciColor').value;
+  const ft = document.getElementById('footer').value;
+
+  let h = '<div class="preview-paper"><div class="p-inner">';
+  h += `<div class="p-columns">`;
+
+  columns.forEach((col, colIdx) => {
+    h += `<div class="p-column">`;
+
+    // Logo-Zuordnung:
+    //  colIdx 0 (links)  → eventLogo (Veranstalter)
+    //  colIdx 1 (rechts) → restaurantLogo
+    const logoSrc = colIdx === 0 ? eventLogo : restaurantLogo;
+    const placeholderText = colIdx === 0 ? 'Veranstalter-Logo (optional)' : 'Restaurant-Logo';
+
+    if (logoSrc) {
+      h += `<div class="p-col-logo"><img src="${logoSrc}"></div>`;
+    } else {
+      h += `<div class="logo-placeholder">${placeholderText}</div>`;
+    }
+
+    // Content-Wrapper: nimmt restliche Spaltenhöhe ein → vertikale Zentrierung bei wenig Inhalt
+    h += `<div class="p-col-content">`;
+
+    // Alle Blöcke dieser Spalte rendern
+    col.blocks.forEach((block, blockIdx) => {
+      if (block.title) {
+        const extra = blockIdx > 0 ? ' p-col-title-additional' : '';
+        h += `<div class="p-col-title${extra}" style="color:${ci}">${escH(block.title)}</div>`;
+      }
+      block.sections.forEach(s => {
+        h += `<div class="p-section">`;
+        if (s.name) h += `<div class="p-sec-name">${escH(s.name)}</div>`;
+        if (s.items) h += `<div class="p-sec-items">${renderItems(s.items)}</div>`;
+        h += `</div>`;
+      });
+    });
+
+    h += `</div>`; // /p-col-content
+    h += `</div>`; // /p-column
+  });
+
+  h += `</div>`;
+
+  if (ft) h += `<div class="p-footer">${escH(ft)}</div>`;
+
+  h += `</div></div>`;
+
+  document.getElementById('preview').innerHTML = h;
+}
+
+/* ── PDF Download — randlose A4-Seite ── */
+async function doPDF() {
+  const btn = document.getElementById('pdfBtn');
+  const status = document.getElementById('pdfStatus');
+  btn.disabled = true;
+  status.textContent = 'PDF wird erstellt …';
+  try {
+    await document.fonts.ready;
+    const el = document.querySelector('.preview-paper');
+    if (!el) throw new Error('Vorschau nicht gefunden');
+
+    const canvas = await html2canvas(el, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: el.offsetWidth,
+      windowHeight: el.offsetHeight
+    });
+
+    const {jsPDF} = window.jspdf;
+    const pdf = new jsPDF({orientation: 'portrait', unit: 'mm', format: 'a4'});
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+
+    // Randlos: Bild füllt gesamte A4-Seite
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pageW, pageH);
+    pdf.save('menukarte.pdf');
+    status.textContent = '✓ PDF gespeichert!';
+    setTimeout(() => status.textContent = '', 3000);
+  } catch (e) {
+    console.error(e);
+    status.textContent = 'Fehler – bitte erneut versuchen.';
+  }
+  btn.disabled = false;
+}
+
+/* ── Init ── */
+buildEditor();
+setRestaurant('aipero');
+</script>
+</body>
+</html>
